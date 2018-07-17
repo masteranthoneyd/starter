@@ -1,7 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.youngboss.mvc.starter.CustomWebMvcConfig,\
-  com.youngboss.mvc.starter.GlobalControllerAdvisor,\
-  com.youngboss.mvc.starter.exception.GlobalExceptionHandler,\
-  com.youngboss.mvc.starter.SpringAsyncConfig,\
-  com.youngboss.mvc.starter.SpringScheduleConfig,\
-  com.youngboss.mvc.starter.shutdown.GracefulShutdownConfiguration

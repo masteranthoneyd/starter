@@ -1,8 +1,0 @@
-com/youngboss/util/function/UncheckedExecution.class
-com/youngboss/util/function/UncheckedFunction.class
-com/youngboss/util/function/UncheckedSupplier.class
-com/youngboss/util/function/UncheckedPredicate.class
-com/youngboss/util/function/Trier.class
-com/youngboss/util/function/UncheckedConsumer.class
-com/youngboss/util/function/UncheckedIntConsumer.class
-com/youngboss/util/function/UncheckedLongConsumer.class

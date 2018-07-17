@@ -1,4 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.youngboss.elasticjob.starter.config.ElasticJobConfig,\
-  com.youngboss.elasticjob.starter.config.JobInitialApplicationListener,\
-  com.youngboss.elasticjob.starter.service.ElasticJobService
