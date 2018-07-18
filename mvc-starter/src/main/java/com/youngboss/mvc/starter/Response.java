@@ -16,7 +16,7 @@ public class Response<T> {
 	private String errorMsg;
 
 	public static <T> Response<T> ok(T body) {
-		return new Response<T>().setBody(body);
+		return body instanceof Response ? (Response) body : new Response<T>().setBody(body);
 	}
 
 	public static Response<Void> ok() {
