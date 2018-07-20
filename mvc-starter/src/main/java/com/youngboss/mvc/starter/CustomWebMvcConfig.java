@@ -20,7 +20,7 @@ import java.util.List;
  * @date 18-7-12
  * @contact yangbingdong1994@gmail.com
  */
-@ConditionalOnClass(FastJsonHttpMessageConverter.class)
+@ConditionalOnClass({FastJsonHttpMessageConverter.class, WebMvcConfigurer.class})
 @ConditionalOnProperty(prefix = "youngboss", name = "converter", havingValue = "fastjson", matchIfMissing = false)
 @Configuration
 public class CustomWebMvcConfig implements WebMvcConfigurer {
