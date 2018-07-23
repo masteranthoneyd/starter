@@ -4,5 +4,4 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   com.youngboss.mvc.starter.exception.GlobalExceptionHandler,\
   com.youngboss.mvc.starter.SpringAsyncConfig,\
   com.youngboss.mvc.starter.SpringScheduleConfig,\
-  com.youngboss.mvc.starter.shutdown.GracefulShutdownConfiguration,\
-  com.youngboss.mvc.starter.ValidatorConfiguration
+  com.youngboss.mvc.starter.shutdown.GracefulShutdownConfiguration
