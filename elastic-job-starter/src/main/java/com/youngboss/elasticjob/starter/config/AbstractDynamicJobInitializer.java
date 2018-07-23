@@ -5,6 +5,7 @@ import com.dangdang.ddframe.job.reg.zookeeper.ZookeeperRegistryCenter;
 import com.youngboss.elasticjob.starter.core.Job;
 import com.youngboss.elasticjob.starter.service.ElasticJobService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.data.Stat;
 
@@ -34,8 +35,13 @@ public abstract class AbstractDynamicJobInitializer<T> {
 	public void initDynamicJob(ZookeeperRegistryCenter zookeeperRegistryCenter, ElasticJobService elasticJobService) {
 		log.info("开始初始化 动态任务");
 		CuratorFramework curatorFramework = zookeeperRegistryCenter.getClient();
+		List<T> scheduleList = getScheduleList();
+		if (CollectionUtils.isEmpty(scheduleList)) {
+			log.info("初始化 动态任务结束, Empty List");
+			return;
+		}
 		try {
-			getScheduleList().forEach(tryConsumer(e -> {
+			scheduleList.forEach(tryConsumer(e -> {
 				String configPath = getConfigPath(e);
 				Stat stat = curatorFramework.checkExists().forPath(configPath);
 				if (nonNull(stat)) {
