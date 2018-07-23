@@ -116,14 +116,14 @@ public class ElasticJobService {
 		Date cronDate = job.getJobParameterVo().isDynamic() ? CronUtils.getDateByCron(job.getCron()) : null;
 		//定时发送的时间存在时并且执行时间小于于当前时间
 		if (nonNull(cronDate) && cronDate.getTime() < System.currentTimeMillis()) {
-			log.warn("jobName为%s尝试创建定时任务失败，执行时间小于当前时间，执行时间为%s", job.getJobName(), cronDate);
+			log.warn("jobName为 {} 尝试创建定时任务失败，执行时间小于当前时间，执行时间为 {}", job.getJobName(), cronDate);
 			return;
 		}
 		ElasticJob elasticJob = null;
 		try {
 			elasticJob = job.getJobClass().newInstance();
 		} catch (Exception e) {
-			log.error("初始化elastic job 失败", e);
+			log.error("Init elastic job fail", e);
 		}
 		JobCoreConfiguration jobCoreConfig = getJobCoreConfiguration(job);
 		JobTypeConfiguration typeConfig = getJobTypeConfiguration(job, jobCoreConfig);
@@ -132,7 +132,7 @@ public class ElasticJobService {
 		SpringJobScheduler springJobScheduler = enableEventConfig ? new SpringJobScheduler(elasticJob, zookeeperRegistryCenter, jobConfig, jobEventConfiguration, distributedJobListener) :
 				new SpringJobScheduler(elasticJob, zookeeperRegistryCenter, jobConfig, distributedJobListener);
 		springJobScheduler.init();
-		log.info("初始化 动态任务成功【" + job.getJobName() + "】\t" + job.getJobClass() + "\tinit success");
+		log.info("Init elastic job success 『" + job.getJobName() + "』");
 	}
 
 	public ElasticJobListener getDistributedJobListener(Job job) {
@@ -210,7 +210,6 @@ public class ElasticJobService {
 			log.error("删除zookeeper节点数据失败，节点为 " + jobName, e);
 		}
 	}
-
 
 	public void removeJob4Monitor(String jobName) {
 		JobScheduleController jobScheduleController = JobRegistry.getInstance().getJobScheduleController(jobName);
