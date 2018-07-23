@@ -10,8 +10,8 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.data.Stat;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.youngboss.util.function.Trier.tryConsumer;
 import static java.util.Objects.nonNull;
 
 /**
@@ -26,22 +26,25 @@ public abstract class AbstractDynamicJobInitializer<T> {
 
 	public abstract List<T> getScheduleList();
 
-	public abstract void addJobIfNotExist(T t);
+	public abstract void addJobIfNotExist(T t) throws Exception;
 
 	private String getConfigPath(T t) {
 		return "/" + getJobName(t) + "/config";
 	}
 
 	public void initDynamicJob(ZookeeperRegistryCenter zookeeperRegistryCenter, ElasticJobService elasticJobService) {
-		log.info("开始初始化 动态任务");
+		log.info("-------------------- Initialing dynamic schedule job --------------------");
 		CuratorFramework curatorFramework = zookeeperRegistryCenter.getClient();
 		List<T> scheduleList = getScheduleList();
 		if (CollectionUtils.isEmpty(scheduleList)) {
-			log.info("初始化 动态任务结束, Empty List");
+			log.info("-------------------- Initialing done, empty job list --------------------");
 			return;
 		}
-		try {
-			scheduleList.forEach(tryConsumer(e -> {
+		int size = scheduleList.size();
+		AtomicInteger successCounter = new AtomicInteger(0);
+		AtomicInteger failCounter = new AtomicInteger(0);
+		scheduleList.forEach(e -> {
+			try {
 				String configPath = getConfigPath(e);
 				Stat stat = curatorFramework.checkExists().forPath(configPath);
 				if (nonNull(stat)) {
@@ -51,11 +54,13 @@ public abstract class AbstractDynamicJobInitializer<T> {
 				} else {
 					addJobIfNotExist(e);
 				}
-			}));
-		} catch (Exception e) {
-			log.error("初始化delay 动态任务失败", e);
-		}
-		log.info("初始化 动态任务结束");
+				successCounter.incrementAndGet();
+			} catch (Exception ex) {
+				log.error("Initialize fail, job: " + e, ex);
+				failCounter.incrementAndGet();
+			}
+		});
+		log.info("-------------------- Initialing done, schedule job size: {}, success count: {}, fail count: {} --------------------", size, successCounter.get(), failCounter.get());
 	}
 
 }
