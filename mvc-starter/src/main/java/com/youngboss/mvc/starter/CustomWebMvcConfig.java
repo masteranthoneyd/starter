@@ -8,7 +8,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.math.BigInteger;
@@ -42,8 +41,8 @@ public class CustomWebMvcConfig implements WebMvcConfigurer {
 		fastConverter.setFastJsonConfig(fastJsonConfig);
 		converters.add(fastConverter);
 
-		StringHttpMessageConverter smc = new StringHttpMessageConverter(Charset.forName("UTF-8"));
-		converters.add(smc);
+//		StringHttpMessageConverter smc = new StringHttpMessageConverter(Charset.forName("UTF-8"));
+//		converters.add(smc);
 
 		converters.add(fastConverter);
 	}

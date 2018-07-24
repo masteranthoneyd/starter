@@ -1,7 +1,6 @@
 package com.youngboss.mvc.starter;
 
 import org.springframework.core.MethodParameter;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.ServerHttpRequest;
@@ -15,19 +14,16 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
  * @contact yangbingdong1994@gmail.com
  */
 @RestControllerAdvice(annotations = Rest.class)
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(0)
 public class GlobalControllerAdvisor implements ResponseBodyAdvice {
 	private static final String VOID = "void";
 	@Override
 	public boolean supports(MethodParameter returnType, Class converterType) {
-		return true;
+		return !returnType.hasMethodAnnotation(BossApi.class);
 	}
 
 	@Override
 	public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
-		if (returnType.hasMethodAnnotation(BossApi.class)) {
-			return BossApiUtil.wrapper(body);
-		}
 		return isVoidMethod(returnType) ? Response.ok() : Response.ok(body);
 	}
 
