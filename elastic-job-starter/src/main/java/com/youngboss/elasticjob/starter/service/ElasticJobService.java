@@ -25,6 +25,7 @@ import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.utils.ZKPaths;
+import org.apache.zookeeper.data.Stat;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -205,7 +206,11 @@ public class ElasticJobService {
 		removeJob4Monitor(jobName);
 		CuratorFramework client = zookeeperRegistryCenter.getClient();
 		try {
-			client.delete().deletingChildrenIfNeeded().forPath("/" + jobName);
+			String path = "/" + jobName;
+			Stat stat = client.checkExists().forPath(path);
+			if (stat != null) {
+				client.delete().deletingChildrenIfNeeded().forPath(path);
+			}
 		} catch (Exception e) {
 			log.error("删除zookeeper节点数据失败，节点为 " + jobName, e);
 		}
