@@ -109,8 +109,8 @@ public class ElasticJobService {
 		}
 	}
 
-	public void addOrUpdateJob(Job job) {
-		initSpringJobScheduler(job);
+	public boolean addOrUpdateJob(Job job) {
+		return initSpringJobScheduler(job);
 	}
 
 	public boolean initSpringJobScheduler(Job job) {
