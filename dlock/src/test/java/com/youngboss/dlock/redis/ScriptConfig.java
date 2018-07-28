@@ -15,11 +15,13 @@ import org.springframework.scripting.support.ResourceScriptSource;
 @Configuration
 public class ScriptConfig {
 
-	@Bean
-	public RedisScript<Long> script() {
-		DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+	public static final String RELEASE_LOCK_SCRIPT = "releaseLockScript";
+
+	@Bean(name = RELEASE_LOCK_SCRIPT)
+	public RedisScript<Boolean> releaseLockScript() {
+		DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>();
 		redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("scripts/release_lock.lua")));
-		redisScript.setResultType(Long.class);
+		redisScript.setResultType(Boolean.class);
 		return redisScript;
 	}
 }

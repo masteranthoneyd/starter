@@ -113,12 +113,12 @@ public class ElasticJobService {
 		initSpringJobScheduler(job);
 	}
 
-	public void initSpringJobScheduler(Job job) {
+	public boolean initSpringJobScheduler(Job job) {
 		Date cronDate = job.getJobParameterVo().isDynamic() ? CronUtils.getDateByCron(job.getCron()) : null;
 		//定时发送的时间存在时并且执行时间小于于当前时间
 		if (nonNull(cronDate) && cronDate.getTime() < System.currentTimeMillis()) {
 			log.warn("jobName为 {} 尝试创建定时任务失败，执行时间小于当前时间，执行时间为 {}", job.getJobName(), cronDate);
-			return;
+			return false;
 		}
 		ElasticJob elasticJob = null;
 		try {
@@ -134,6 +134,7 @@ public class ElasticJobService {
 				new SpringJobScheduler(elasticJob, zookeeperRegistryCenter, jobConfig, distributedJobListener);
 		springJobScheduler.init();
 		log.info("Init elastic job success 『" + job.getJobName() + "』");
+		return true;
 	}
 
 	public ElasticJobListener getDistributedJobListener(Job job) {

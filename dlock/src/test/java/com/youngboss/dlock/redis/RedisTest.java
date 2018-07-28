@@ -13,6 +13,8 @@ import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.annotation.Resource;
+import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -31,8 +33,8 @@ public class RedisTest {
 	@Autowired
 	private StringRedisTemplate stringRedisTemplate;
 
-	@Autowired
-	private RedisScript<Long> script;
+	@Resource(name = ScriptConfig.RELEASE_LOCK_SCRIPT)
+	private RedisScript<Boolean> script;
 
 	@Test
 	public void setKv() {
@@ -75,14 +77,17 @@ public class RedisTest {
 	}
 
 	@Test
-	public void executeScript() {
+	public void executeScript() throws IOException {
 		String key = "scriptKey";
 		String value = UUID.randomUUID().toString();
 		Boolean setNxEx = setNxEx(key, value);
 		Assertions.assertThat(setNxEx)
 				  .isTrue();
-		Long execute = stringRedisTemplate.execute(script, singletonList(key), value);
+		Boolean execute = stringRedisTemplate.execute(script, singletonList(key), value);
 		Assertions.assertThat(execute)
-				  .isEqualTo(1L);
+				  .isEqualTo(true);
+		execute = stringRedisTemplate.execute(script, singletonList(key), value);
+		Assertions.assertThat(execute)
+				  .isEqualTo(false);
 	}
 }
