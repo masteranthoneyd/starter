@@ -1,18 +1,13 @@
 package com.youngboss.elasticjob.starter.config;
 
-import com.alibaba.fastjson.JSONObject;
 import com.dangdang.ddframe.job.reg.zookeeper.ZookeeperRegistryCenter;
-import com.youngboss.elasticjob.starter.core.Job;
 import com.youngboss.elasticjob.starter.service.ElasticJobService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.zookeeper.data.Stat;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.util.Objects.nonNull;
 
 /**
  * @author ybd
@@ -45,7 +40,7 @@ public abstract class AbstractDynamicJobInitializer<T> {
 		AtomicInteger failCounter = new AtomicInteger(0);
 		scheduleList.forEach(e -> {
 			try {
-				String configPath = getConfigPath(e);
+				/*String configPath = getConfigPath(e);
 				Stat stat = curatorFramework.checkExists().forPath(configPath);
 				if (nonNull(stat)) {
 					String config = new String(curatorFramework.getData().forPath(configPath));
@@ -53,7 +48,8 @@ public abstract class AbstractDynamicJobInitializer<T> {
 					elasticJobService.initSpringJobScheduler(job);
 				} else {
 					addJobIfNotExist(e);
-				}
+				}*/
+				addJobIfNotExist(e);
 				successCounter.incrementAndGet();
 			} catch (Exception ex) {
 				log.error("Initialize fail, job: " + e, ex);
