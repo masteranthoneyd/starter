@@ -38,8 +38,8 @@ public void redissonLockTest() {
 
 ## 并发量
 
+压测使用JUnit结合contiperf，代码请看test
+
 Redisson > Spring Data > Zookeeper
-
-
 
 可靠性方面 Zookeeper > Redisson = Spring Data
