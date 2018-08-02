@@ -28,7 +28,6 @@ public class CondiPerfTest {
 	private DLock dLock;
 
 	private static int success = 0;
-	private static int fail = 0;
 	private static LongAdder longAdder = new LongAdder();
 
 	@PerfTest(duration = 20000, threads = 6, rampUp = 500, warmUp = 500)
@@ -40,7 +39,7 @@ public class CondiPerfTest {
 
 	@AfterClass
 	public static void destroy() {
-		System.out.println("--------------------------  total: " + longAdder.longValue() + "  success: " + success + "  fail: " + fail);
+		System.out.println("--------------------------  total: " + longAdder.longValue() + "  success: " + success);
 	}
 
 }

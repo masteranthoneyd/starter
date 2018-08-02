@@ -1,4 +1,19 @@
 {
   "properties": [
+    {
+      "name": "youngboss.dlock.zookeeper.host",
+      "type": "java.lang.String",
+      "description": "Description for youngboss.dlock.zookeeper.host."
+    },
+    {
+      "name": "youngboss.dlock.zookeeper.port",
+      "type": "java.lang.String",
+      "description": "Description for youngboss.dlock.zookeeper.port."
+    },
+    {
+      "name": "youngboss.dlock.zookeeper.lock-path",
+      "type": "java.lang.String",
+      "description": "Description for youngboss.dlock.zookeeper.lock-path."
+    }
   ]
 }

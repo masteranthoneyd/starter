@@ -15,7 +15,11 @@ youngboss:
   dlock:
     host: 127.0.0.1
     port: 6379
-    wait-time: 3
-    lease-time: 3
+    wait-time: 5
+    lease-time: 5
     time-unit: seconds
-    dLockType: redisson
+    dLockType: zookeeper
+    zookeeper:
+      host: 127.0.0.1
+      port: 2181
+      lock-path: "/lock"

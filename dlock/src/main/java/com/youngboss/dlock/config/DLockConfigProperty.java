@@ -41,8 +41,17 @@ public class DLockConfigProperty {
 
 	private Spring spring = new Spring();
 
+	private Zookeeper zookeeper = new Zookeeper();
+
 	@Data
 	public static class Spring {
 		private String scriptLocation = "scripts/release_lock.lua";
+	}
+
+	@Data
+	public static class Zookeeper {
+		private String host = "127.0.0.1";
+		private String port = "2181";
+		private String lockPath = "/curator/lock";
 	}
 }

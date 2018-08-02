@@ -4,7 +4,6 @@ import com.youngboss.dlock.core.AfterAcquireAction;
 import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.FailAcquireAction;
 import com.youngboss.dlock.core.LockKeyGenerator;
-import com.youngboss.dlock.exception.AcquireTimeOutException;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +17,7 @@ import javax.annotation.Resource;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.youngboss.dlock.core.FailAcquireAction.DEFAULT_FAIL_ACQUIRE_ACTION;
 import static java.util.Collections.singletonList;
 import static org.springframework.data.redis.connection.RedisStringCommands.SetOption.SET_IF_ABSENT;
 
@@ -42,16 +42,12 @@ public class SpringDataRedisDLock implements DLock {
 
 	@Override
 	public void tryLockAndAction(LockKeyGenerator lockKeyGenerator, AfterAcquireAction acquireAction) {
-		tryLockAndAction(lockKeyGenerator, acquireAction, () -> {
-			throw new AcquireTimeOutException();
-		}, waitTime, leaseTime, timeUnit);
+		tryLockAndAction(lockKeyGenerator, acquireAction, waitTime, leaseTime, timeUnit);
 	}
 
 	@Override
 	public void tryLockAndAction(LockKeyGenerator lockKeyGenerator, AfterAcquireAction acquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) {
-		tryLockAndAction(lockKeyGenerator, acquireAction, () -> {
-			throw new AcquireTimeOutException();
-		}, waitTime, leaseTime, timeUnit);
+		tryLockAndAction(lockKeyGenerator, acquireAction, DEFAULT_FAIL_ACQUIRE_ACTION, waitTime, leaseTime, timeUnit);
 	}
 
 	@Override

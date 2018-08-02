@@ -3,6 +3,7 @@ package com.youngboss.dlock.config;
 import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.impl.redisson.RedissonDLock;
 import com.youngboss.dlock.core.impl.spring.SpringDataRedisDLock;
+import com.youngboss.dlock.core.impl.zookeeper.ZookeeperDLock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +32,8 @@ public class RedisLockConfig {
 			case SPRING:
 				return new SpringDataRedisDLock(property.getWaitTime(), property.getLeaseTime(), property.getTimeUnit());
 			case ZOOKEEPER:
-				return null;
+				DLockConfigProperty.Zookeeper zookeeper = property.getZookeeper();
+				return new ZookeeperDLock(property.getWaitTime(), property.getTimeUnit(), zookeeper.getHost() + ":" + zookeeper.getPort(), zookeeper.getLockPath());
 			default:
 				return null;
 		}

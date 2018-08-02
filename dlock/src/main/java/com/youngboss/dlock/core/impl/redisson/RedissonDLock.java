@@ -4,7 +4,6 @@ import com.youngboss.dlock.core.AfterAcquireAction;
 import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.FailAcquireAction;
 import com.youngboss.dlock.core.LockKeyGenerator;
-import com.youngboss.dlock.exception.AcquireTimeOutException;
 import lombok.Data;
 import org.redisson.Redisson;
 import org.redisson.api.RLock;
@@ -13,6 +12,8 @@ import org.redisson.config.Config;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.youngboss.dlock.core.FailAcquireAction.DEFAULT_FAIL_ACQUIRE_ACTION;
+
 /**
  * @author ybd
  * @date 18-8-1
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Data
 public class RedissonDLock implements DLock {
+
 	private final Long waitTime;
 	private final Long leaseTime;
 	private final TimeUnit timeUnit;
@@ -40,16 +42,12 @@ public class RedissonDLock implements DLock {
 
 	@Override
 	public void tryLockAndAction(LockKeyGenerator lockKeyGenerator, AfterAcquireAction acquireAction) {
-		tryLockAndAction(lockKeyGenerator, acquireAction, () -> {
-			throw new AcquireTimeOutException();
-		}, waitTime, leaseTime, timeUnit);
+		tryLockAndAction(lockKeyGenerator, acquireAction, waitTime, leaseTime, timeUnit);
 	}
 
 	@Override
 	public void tryLockAndAction(LockKeyGenerator lockKeyGenerator, AfterAcquireAction acquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) {
-		tryLockAndAction(lockKeyGenerator, acquireAction, () -> {
-			throw new AcquireTimeOutException();
-		}, waitTime, leaseTime, timeUnit);
+		tryLockAndAction(lockKeyGenerator, acquireAction, DEFAULT_FAIL_ACQUIRE_ACTION, waitTime, leaseTime, timeUnit);
 	}
 
 	@Override
