@@ -1,5 +1,7 @@
-package com.youngboss.dlock.redis;
+package com.youngboss.dlock.core.impl.spring;
 
+import com.youngboss.dlock.config.DLockConfigProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -13,14 +15,14 @@ import org.springframework.scripting.support.ResourceScriptSource;
  * @contact yangbingdong1994@gmail.com
  */
 @Configuration
+@EnableConfigurationProperties(DLockConfigProperty.class)
 public class ScriptConfig {
 
-	public static final String RELEASE_LOCK_SCRIPT = "releaseLockScript";
-
-	@Bean(name = RELEASE_LOCK_SCRIPT)
-	public RedisScript<Boolean> releaseLockScript() {
+	@Bean
+	public RedisScript<Boolean> releaseLockScript(DLockConfigProperty dLockConfigProperty) {
 		DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>();
-		redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("scripts/release_lock.lua")));
+		String scriptLocation = dLockConfigProperty.getSpring().getScriptLocation();
+		redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource(scriptLocation)));
 		redisScript.setResultType(Boolean.class);
 		return redisScript;
 	}

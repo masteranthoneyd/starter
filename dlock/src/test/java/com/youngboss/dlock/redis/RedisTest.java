@@ -1,5 +1,7 @@
 package com.youngboss.dlock.redis;
 
+import com.youngboss.dlock.core.DLock;
+import com.youngboss.dlock.exception.AcquireTimeOutException;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,8 +35,30 @@ public class RedisTest {
 	@Autowired
 	private StringRedisTemplate stringRedisTemplate;
 
-	@Resource(name = ScriptConfig.RELEASE_LOCK_SCRIPT)
+	@Resource
 	private RedisScript<Boolean> script;
+
+	@Resource
+	private DLock dLock;
+
+	@Test
+	public void springDLockTest() throws InterruptedException {
+		new Thread(() -> dLock.tryLockAndAction(() -> "DLockKey:", () -> {
+			try {
+				Thread.sleep(5000L);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			System.out.println("Thread-1...");
+		})).start();
+
+		Thread.sleep(100L);
+
+		Assertions.assertThatThrownBy(() -> dLock.tryLockAndAction(() -> "DLockKey:", () -> {
+			System.out.println("Thread-2...");
+		}, 1L, 1L, TimeUnit.SECONDS))
+				  .isInstanceOf(AcquireTimeOutException.class);
+	}
 
 	@Test
 	public void setKv() {
@@ -86,7 +110,10 @@ public class RedisTest {
 		Boolean execute = stringRedisTemplate.execute(script, singletonList(key), value);
 		Assertions.assertThat(execute)
 				  .isEqualTo(true);
+		long start = System.nanoTime();
 		execute = stringRedisTemplate.execute(script, singletonList(key), value);
+		long end = System.nanoTime();
+		System.out.println("Custom time: " + (end - start));
 		Assertions.assertThat(execute)
 				  .isEqualTo(false);
 	}

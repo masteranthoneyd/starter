@@ -6,7 +6,16 @@ spring:
     timeout: 10s
     lettuce:
       pool:
-        max-active: 8
+        max-active: 64
         max-wait: -1s
-        max-idle: 8
+        max-idle: 10
         min-idle: 0
+
+youngboss:
+  dlock:
+    host: 127.0.0.1
+    port: 6379
+    wait-time: 3
+    lease-time: 3
+    time-unit: seconds
+    dLockType: redisson
