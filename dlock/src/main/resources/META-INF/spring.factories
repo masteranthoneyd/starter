@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.youngboss.dlock.aop.DLockAspect,\
+  com.youngboss.dlock.config.RedisLockConfig

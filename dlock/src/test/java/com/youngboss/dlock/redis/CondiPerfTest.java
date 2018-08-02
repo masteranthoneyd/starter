@@ -30,6 +30,16 @@ public class CondiPerfTest {
 	private static int success = 0;
 	private static LongAdder longAdder = new LongAdder();
 
+	@Resource
+	private TestService testService;
+
+	@PerfTest(duration = 20000, threads = 6, rampUp = 500, warmUp = 500)
+	@Test
+	public void lockAnnotationTest() {
+		longAdder.increment();
+		testService.lockTest(666L);
+	}
+
 	@PerfTest(duration = 20000, threads = 6, rampUp = 500, warmUp = 500)
 	@Test
 	public void redissonLockTest() {

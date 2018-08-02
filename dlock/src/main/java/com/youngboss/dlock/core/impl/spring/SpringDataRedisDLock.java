@@ -1,6 +1,7 @@
 package com.youngboss.dlock.core.impl.spring;
 
 import com.youngboss.dlock.core.AfterAcquireAction;
+import com.youngboss.dlock.core.AfterAcquireCommand;
 import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.FailAcquireAction;
 import com.youngboss.dlock.core.LockKeyGenerator;
@@ -72,6 +73,26 @@ public class SpringDataRedisDLock implements DLock {
 		} finally {
 			unlockInner(lockKey, value);
 		}
+	}
+
+	@Override
+	public <T> T tryLockAndExecuteCommand(LockKeyGenerator lockKeyGenerator, AfterAcquireCommand<T> command, FailAcquireAction failAcquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) throws Throwable {
+		String lockKey = lockKeyGenerator.getLockKey();
+		String value = UUID.randomUUID().toString();
+		try {
+			long begin = System.currentTimeMillis();
+			long waitTimeMillis = timeUnit.toMillis(waitTime);
+			while ((System.currentTimeMillis() - begin) < waitTimeMillis) {
+				if (lockInner(lockKey, value, leaseTime, timeUnit)) {
+					return command.executeCommand();
+				}
+				sleep();
+			}
+			failAcquireAction.doOnFail();
+		} finally {
+			unlockInner(lockKey, value);
+		}
+		return null;
 	}
 
 	private Boolean lockInner(String k, String v, Long exTime, TimeUnit timeUnit) {

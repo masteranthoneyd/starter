@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: lock-test
   redis:
     host: 127.0.0.1
     port: 6379
@@ -18,7 +20,7 @@ youngboss:
     wait-time: 5
     lease-time: 5
     time-unit: seconds
-    dLockType: zookeeper
+    dLockType: redisson
     zookeeper:
       host: 127.0.0.1
       port: 2181

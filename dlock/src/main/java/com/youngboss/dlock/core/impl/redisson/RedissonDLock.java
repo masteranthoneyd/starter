@@ -1,6 +1,7 @@
 package com.youngboss.dlock.core.impl.redisson;
 
 import com.youngboss.dlock.core.AfterAcquireAction;
+import com.youngboss.dlock.core.AfterAcquireCommand;
 import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.FailAcquireAction;
 import com.youngboss.dlock.core.LockKeyGenerator;
@@ -65,5 +66,20 @@ public class RedissonDLock implements DLock {
 		} finally {
 			lock.unlockAsync();
 		}
+	}
+
+	@Override
+	public <T> T tryLockAndExecuteCommand(LockKeyGenerator lockKeyGenerator, AfterAcquireCommand<T> command, FailAcquireAction failAcquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) throws Throwable {
+		RLock lock = redisson.getLock(lockKeyGenerator.getLockKey());
+		try {
+			boolean acquire = lock.tryLock(waitTime, leaseTime, timeUnit);
+			if (acquire) {
+				return command.executeCommand();
+			}
+			failAcquireAction.doOnFail();
+		} finally {
+			lock.unlockAsync();
+		}
+		return null;
 	}
 }

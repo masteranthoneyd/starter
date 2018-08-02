@@ -1,6 +1,7 @@
 package com.youngboss.dlock.core.impl.zookeeper;
 
 import com.youngboss.dlock.core.AfterAcquireAction;
+import com.youngboss.dlock.core.AfterAcquireCommand;
 import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.FailAcquireAction;
 import com.youngboss.dlock.core.LockKeyGenerator;
@@ -62,12 +63,12 @@ public class ZookeeperDLock implements DLock, DisposableBean {
 			acquire = mutex.acquire(waitTime, timeUnit);
 			if (acquire) {
 				acquireAction.doAction();
-			}else {
+			} else {
 				failAcquireAction.doOnFail();
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
-		}finally {
+		} finally {
 			if (acquire) {
 				try {
 					mutex.release();
@@ -76,6 +77,23 @@ public class ZookeeperDLock implements DLock, DisposableBean {
 				}
 			}
 		}
+	}
+
+	@Override
+	public <T> T tryLockAndExecuteCommand(LockKeyGenerator lockKeyGenerator, AfterAcquireCommand<T> command, FailAcquireAction failAcquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) throws Throwable {
+		boolean acquire = false;
+		try {
+			acquire = mutex.acquire(waitTime, timeUnit);
+			if (acquire) {
+				return command.executeCommand();
+			}
+			failAcquireAction.doOnFail();
+		} finally {
+			if (acquire) {
+				mutex.release();
+			}
+		}
+		return null;
 	}
 
 	@Override
