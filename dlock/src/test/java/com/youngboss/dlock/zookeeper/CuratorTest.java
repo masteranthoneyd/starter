@@ -6,6 +6,8 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,17 +21,16 @@ public class CuratorTest {
 	private static String address = "127.0.0.1:2181";
 
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
 		CuratorFramework client = CuratorFrameworkFactory.newClient(address, retryPolicy);
 		client.start();
-
 		//创建分布式锁, 锁空间的根节点路径为/curator/lock
 		InterProcessMutex mutex = new InterProcessMutex(client, "/curator/lock");
 		ExecutorService fixedThreadPool = Executors.newFixedThreadPool(5);
-
+		CompletionService<Object> completionService = new ExecutorCompletionService<>(fixedThreadPool);
 		for (int i = 0; i < 5; i++) {
-			fixedThreadPool.submit(() -> {
+			completionService.submit(() -> {
 				boolean flag = false;
 				try {
 					//尝试获取锁，最多等待5秒
@@ -53,9 +54,17 @@ public class CuratorTest {
 						}
 					}
 				}
+				return null;
 			});
 		}
-		Thread.sleep(20000L);
+		// 等待线程跑完
+		int count = 0;
+		while (count < 5) {
+			if (completionService.poll() != null) {
+				count++;
+			}
+		}
+		System.out.println("=========  Complete!");
 		client.close();
 		fixedThreadPool.shutdown();
 	}
