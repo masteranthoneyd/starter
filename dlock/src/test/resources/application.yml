@@ -6,17 +6,15 @@ spring:
     port: 6379
     password:
     timeout: 10s
-    lettuce:
-      pool:
-        max-active: 64
-        max-wait: -1s
-        max-idle: 10
-        min-idle: 0
+#    lettuce:
+#      pool:
+#        max-active: 64
+#        max-wait: -1s
+#        max-idle: 10
+#        min-idle: 0
 
 youngboss:
   dlock:
-    host: 127.0.0.1
-    port: 6379
     wait-time: 5
     lease-time: 5
     time-unit: seconds

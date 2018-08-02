@@ -1,5 +1,6 @@
 package com.youngboss.dlock.core.impl.zookeeper;
 
+import com.youngboss.dlock.config.DLockConfigProperty;
 import com.youngboss.dlock.core.AfterAcquireAction;
 import com.youngboss.dlock.core.AfterAcquireCommand;
 import com.youngboss.dlock.core.DLock;
@@ -29,21 +30,18 @@ public class ZookeeperDLock implements DLock, DisposableBean {
 
 	private final Long waitTime;
 	private final TimeUnit timeUnit;
-	private final String zookeeperUrl;
-	private final String lockPath;
 	private final CuratorFramework client;
 	private final InterProcessMutex mutex;
 
-	public ZookeeperDLock(Long waitTime, TimeUnit timeUnit, String zookeeperUrl, String lockPath) {
-		this.waitTime = waitTime;
-		this.timeUnit = timeUnit;
-		this.zookeeperUrl = zookeeperUrl;
-		this.lockPath = lockPath;
+	public ZookeeperDLock(DLockConfigProperty property) {
+		this.waitTime = property.getWaitTime();
+		this.timeUnit = property.getTimeUnit();
 
 		RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
-		client = CuratorFrameworkFactory.newClient(this.zookeeperUrl, retryPolicy);
+		DLockConfigProperty.Zookeeper zookeeper = property.getZookeeper();
+		client = CuratorFrameworkFactory.newClient(zookeeper.getHost() + ":" + zookeeper.getPort(), retryPolicy);
 		client.start();
-		mutex = new InterProcessMutex(client, this.lockPath);
+		mutex = new InterProcessMutex(client, zookeeper.getLockPath());
 	}
 
 	@Override

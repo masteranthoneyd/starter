@@ -1,8 +1,12 @@
 package com.youngboss.dlock.config;
 
 import lombok.Data;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -11,13 +15,20 @@ import java.util.concurrent.TimeUnit;
  * @contact yangbingdong1994@gmail.com
  */
 @Data
+@EnableConfigurationProperties(RedisProperties.class)
 @ConfigurationProperties(DLockConfigProperty.PREFIX)
 public class DLockConfigProperty {
+
 	public static final String PREFIX = "youngboss.dlock";
 
-	private String host = "127.0.0.1";
+	@Resource
+	private RedisProperties redisProperties;
 
-	private String port = "6379";
+	private String host;
+
+	private String port;
+
+	private String password;
 
 	/**
 	 * 获取锁时最大等待时间
@@ -53,5 +64,12 @@ public class DLockConfigProperty {
 		private String host = "127.0.0.1";
 		private String port = "2181";
 		private String lockPath = "/curator/lock";
+	}
+
+	@PostConstruct
+	public void init() {
+		this.host = redisProperties.getHost();
+		this.port = String.valueOf(redisProperties.getPort());
+		this.password = redisProperties.getPassword();
 	}
 }

@@ -1,5 +1,6 @@
 package com.youngboss.dlock.core.impl.spring;
 
+import com.youngboss.dlock.config.DLockConfigProperty;
 import com.youngboss.dlock.core.AfterAcquireAction;
 import com.youngboss.dlock.core.AfterAcquireCommand;
 import com.youngboss.dlock.core.DLock;
@@ -40,6 +41,12 @@ public class SpringDataRedisDLock implements DLock {
 
 	@Resource
 	private RedisScript<Boolean> script;
+
+	public SpringDataRedisDLock(DLockConfigProperty property) {
+		this.waitTime = property.getWaitTime();
+		this.leaseTime = property.getLeaseTime();
+		this.timeUnit = property.getTimeUnit();
+	}
 
 	@Override
 	public void tryLockAndAction(LockKeyGenerator lockKeyGenerator, AfterAcquireAction acquireAction) {

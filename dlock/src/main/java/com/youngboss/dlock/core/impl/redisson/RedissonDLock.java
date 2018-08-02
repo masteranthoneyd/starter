@@ -1,15 +1,20 @@
 package com.youngboss.dlock.core.impl.redisson;
 
+import com.youngboss.dlock.config.DLockConfigProperty;
 import com.youngboss.dlock.core.AfterAcquireAction;
 import com.youngboss.dlock.core.AfterAcquireCommand;
 import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.FailAcquireAction;
 import com.youngboss.dlock.core.LockKeyGenerator;
+import io.netty.channel.epoll.Epoll;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.Redisson;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
+import org.redisson.config.SingleServerConfig;
+import org.redisson.config.TransportMode;
 
 import java.util.concurrent.TimeUnit;
 
@@ -21,24 +26,37 @@ import static com.youngboss.dlock.core.FailAcquireAction.DEFAULT_FAIL_ACQUIRE_AC
  * @contact yangbingdong1994@gmail.com
  */
 @Data
+@Slf4j
 public class RedissonDLock implements DLock {
 
 	private final Long waitTime;
 	private final Long leaseTime;
 	private final TimeUnit timeUnit;
-	private final String redisUrl;
 	private final RedissonClient redisson;
 
-	public RedissonDLock(Long waitTime, Long leaseTime, TimeUnit timeUnit, String redisUrl) {
-		this.waitTime = waitTime;
-		this.leaseTime = leaseTime;
-		this.timeUnit = timeUnit;
-		this.redisUrl = redisUrl;
-		Config config = new Config();
-		config.useSingleServer().setAddress("redis://" + redisUrl);
-//		config.setTransportMode(TransportMode.EPOLL);
-		redisson = Redisson.create(config);
+	public RedissonDLock(DLockConfigProperty property) {
+		this.waitTime = property.getWaitTime();
+		this.leaseTime = property.getLeaseTime();
+		this.timeUnit = property.getTimeUnit();
 
+		Config config = new Config();
+		SingleServerConfig singleServerConfig = config.useSingleServer();
+		singleServerConfig.setAddress("redis://" + property.getHost() + ":" + property.getPort());
+		if (property.getPassword() != null && property.getPassword().trim().length() > 0) {
+			singleServerConfig.setPassword(property.getPassword());
+		}
+		try {
+			Class.forName("io.netty.channel.epoll.Epoll");
+			if (Epoll.isAvailable()) {
+				config.setTransportMode(TransportMode.EPOLL);
+				log.info("Starting with optional epoll library");
+			}else {
+				log.info("Starting without optional epoll library");
+			}
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		redisson = Redisson.create(config);
 	}
 
 	@Override

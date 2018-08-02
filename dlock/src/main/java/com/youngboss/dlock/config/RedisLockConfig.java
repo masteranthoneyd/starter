@@ -28,12 +28,11 @@ public class RedisLockConfig {
 	public DLock springDataRedisDLock() {
 		switch (property.getDLockType()) {
 			case REDISSON:
-				return new RedissonDLock(property.getWaitTime(), property.getLeaseTime(), property.getTimeUnit(), property.getHost() + ":" + property.getPort());
+				return new RedissonDLock(property);
 			case SPRING:
-				return new SpringDataRedisDLock(property.getWaitTime(), property.getLeaseTime(), property.getTimeUnit());
+				return new SpringDataRedisDLock(property);
 			case ZOOKEEPER:
-				DLockConfigProperty.Zookeeper zookeeper = property.getZookeeper();
-				return new ZookeeperDLock(property.getWaitTime(), property.getTimeUnit(), zookeeper.getHost() + ":" + zookeeper.getPort(), zookeeper.getLockPath());
+				return new ZookeeperDLock(property);
 			default:
 				return null;
 		}
