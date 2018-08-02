@@ -8,39 +8,38 @@
 * 基于`Spring Data Redis`
 * 基于`Zookeeper`
 
-## 配置
-
-```
-spring:
-  application:
-    name: lock-test
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    password:
-    timeout: 10s
-    lettuce:
-      pool:
-        max-active: 64
-        max-wait: -1s
-        max-idle: 10
-        min-idle: 0
-
-youngboss:
-  dlock:
-    host: 127.0.0.1
-    port: 6379
-    wait-time: 5
-    lease-time: 5
-    time-unit: seconds
-    dLockType: redisson
-    zookeeper:
-      host: 127.0.0.1
-      port: 2181
-      lock-path: "/lock"
-```
-
-
-
 ## 注解模式
 
+```
+@Component
+public class TestService {
+
+	public static int i = 0;
+
+	@Lock(prefixClass = TestService.class, key = "#args[0]") // key = "#id" 也是可以的
+	public void lockTest(Long id) {
+		i++;
+	}
+}
+```
+
+## 编码模式
+
+```
+// 提供key以及action
+public void redissonLockTest() {
+		dLock.tryLockAndAction(() -> "redisson-lockInner", () -> success ++);
+	}
+```
+
+**配置请看`test`目录下的`application.yml`结合`DLockConfigProperty`这个类**
+
+
+
+## 并发量
+
+Redisson > Spring Data > Zookeeper
+
+
+
+可靠性方面 Zookeeper > Redisson = Spring Data
