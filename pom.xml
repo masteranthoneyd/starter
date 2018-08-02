@@ -16,6 +16,7 @@
         <module>mvc-starter</module>
         <module>elastic-job-starter</module>
         <module>disruptor-starter</module>
+        <module>dlock</module>
     </modules>
 
     <parent>
