@@ -33,12 +33,12 @@ public class DLockConfigProperty {
 	/**
 	 * 获取锁时最大等待时间
 	 */
-	private Long waitTime = 3L;
+	private Long waitTime = 1L;
 
 	/**
 	 * 锁释放时间，防止程序挂掉没有释放锁
 	 */
-	private Long leaseTime = 3L;
+	private Long leaseTime = 1L;
 
 	/**
 	 * 时间单位
