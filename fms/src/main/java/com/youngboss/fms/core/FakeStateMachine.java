@@ -39,8 +39,8 @@ public class FakeStateMachine<S, E, SOURCE> {
 		Action<S, SOURCE> action = transition.action();
 		if (action != null) {
 			action.doStateChangeAction(transition.targetState(), s);
-		}else {
-			log.warn("The action is null, sourceState = {}, event = {}", sourceState, e);
+		} else {
+			throw new FsmException("Illegal action, sourceState = " + sourceState + ", event = " + e);
 		}
 	}
 }
