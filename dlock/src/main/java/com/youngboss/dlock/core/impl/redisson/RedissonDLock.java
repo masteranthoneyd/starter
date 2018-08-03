@@ -7,7 +7,9 @@ import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.FailAcquireAction;
 import com.youngboss.dlock.core.LockKeyGenerator;
 import io.netty.channel.epoll.Epoll;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.Redisson;
 import org.redisson.api.RLock;
@@ -50,7 +52,7 @@ public class RedissonDLock implements DLock {
 			if (Epoll.isAvailable()) {
 				config.setTransportMode(TransportMode.EPOLL);
 				log.info("Starting with optional epoll library");
-			}else {
+			} else {
 				log.info("Starting without optional epoll library");
 			}
 		} catch (ClassNotFoundException e) {
@@ -71,33 +73,39 @@ public class RedissonDLock implements DLock {
 
 	@Override
 	public void tryLockAndAction(LockKeyGenerator lockKeyGenerator, AfterAcquireAction acquireAction, FailAcquireAction failAcquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) {
-		RLock lock = redisson.getLock(lockKeyGenerator.getLockKey());
-		try {
-			boolean acquire = lock.tryLock(waitTime, leaseTime, timeUnit);
+		try (LockHolder holder = new LockHolder(redisson.getLock(lockKeyGenerator.getLockKey()))) {
+			boolean acquire = holder.getLock().tryLock(waitTime, leaseTime, timeUnit);
 			if (acquire) {
 				acquireAction.doAction();
-			}else {
+			} else {
 				failAcquireAction.doOnFail();
 			}
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
-		} finally {
-			lock.unlockAsync();
 		}
 	}
 
 	@Override
 	public <T> T tryLockAndExecuteCommand(LockKeyGenerator lockKeyGenerator, AfterAcquireCommand<T> command, FailAcquireAction failAcquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) throws Throwable {
-		RLock lock = redisson.getLock(lockKeyGenerator.getLockKey());
-		try {
-			boolean acquire = lock.tryLock(waitTime, leaseTime, timeUnit);
+		try (LockHolder holder = new LockHolder(redisson.getLock(lockKeyGenerator.getLockKey()))) {
+			boolean acquire = holder.getLock().tryLock(waitTime, leaseTime, timeUnit);
 			if (acquire) {
 				return command.executeCommand();
 			}
 			failAcquireAction.doOnFail();
-		} finally {
-			lock.unlockAsync();
 		}
 		return null;
+	}
+
+	@Data
+	@Accessors(chain = true)
+	@AllArgsConstructor
+	private static class LockHolder implements AutoCloseable {
+		private RLock lock;
+
+		@Override
+		public void close() {
+			lock.unlockAsync();
+		}
 	}
 }

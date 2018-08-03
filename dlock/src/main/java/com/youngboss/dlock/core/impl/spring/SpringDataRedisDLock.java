@@ -7,8 +7,10 @@ import com.youngboss.dlock.core.DLock;
 import com.youngboss.dlock.core.FailAcquireAction;
 import com.youngboss.dlock.core.LockKeyGenerator;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -62,12 +64,12 @@ public class SpringDataRedisDLock implements DLock {
 	public void tryLockAndAction(LockKeyGenerator lockKeyGenerator, AfterAcquireAction acquireAction, FailAcquireAction failAcquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) {
 		String lockKey = lockKeyGenerator.getLockKey();
 		String value = UUID.randomUUID().toString();
-		try {
+		try (LockHolder holder = new LockHolder(lockKey, value, leaseTime, timeUnit)) {
 			boolean acquire = false;
 			long begin = System.currentTimeMillis();
 			long waitTimeMillis = timeUnit.toMillis(waitTime);
 			while ((System.currentTimeMillis() - begin) < waitTimeMillis) {
-				if (lockInner(lockKey, value, leaseTime, timeUnit)) {
+				if (holder.lockInner()) {
 					acquire = true;
 					acquireAction.doAction();
 					break;
@@ -77,8 +79,6 @@ public class SpringDataRedisDLock implements DLock {
 			if (!acquire) {
 				failAcquireAction.doOnFail();
 			}
-		} finally {
-			unlockInner(lockKey, value);
 		}
 	}
 
@@ -86,31 +86,18 @@ public class SpringDataRedisDLock implements DLock {
 	public <T> T tryLockAndExecuteCommand(LockKeyGenerator lockKeyGenerator, AfterAcquireCommand<T> command, FailAcquireAction failAcquireAction, Long waitTime, Long leaseTime, TimeUnit timeUnit) throws Throwable {
 		String lockKey = lockKeyGenerator.getLockKey();
 		String value = UUID.randomUUID().toString();
-		try {
+		try (LockHolder holder = new LockHolder(lockKey, value, leaseTime, timeUnit)) {
 			long begin = System.currentTimeMillis();
 			long waitTimeMillis = timeUnit.toMillis(waitTime);
 			while ((System.currentTimeMillis() - begin) < waitTimeMillis) {
-				if (lockInner(lockKey, value, leaseTime, timeUnit)) {
+				if (holder.lockInner()) {
 					return command.executeCommand();
 				}
 				sleep();
 			}
 			failAcquireAction.doOnFail();
-		} finally {
-			unlockInner(lockKey, value);
 		}
 		return null;
-	}
-
-	private Boolean lockInner(String k, String v, Long exTime, TimeUnit timeUnit) {
-		return stringRedisTemplate.execute((RedisCallback<Boolean>) connection -> {
-			StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
-			return stringRedisConn.set(k, v, Expiration.from(exTime, timeUnit), SET_IF_ABSENT);
-		});
-	}
-
-	private void unlockInner(String k, String v) {
-		stringRedisTemplate.execute(script, singletonList(k), v);
 	}
 
 	private void sleep() {
@@ -118,6 +105,28 @@ public class SpringDataRedisDLock implements DLock {
 			TimeUnit.MICROSECONDS.sleep(1);
 		} catch (InterruptedException e) {
 			throw new IllegalStateException(e);
+		}
+	}
+
+	@Data
+	@Accessors(chain = true)
+	@AllArgsConstructor
+	private class LockHolder implements AutoCloseable {
+		private String lockKey;
+		private String value;
+		private long leaseTime;
+		private TimeUnit timeUnit;
+
+		Boolean lockInner() {
+			return stringRedisTemplate.execute((RedisCallback<Boolean>) connection -> {
+				StringRedisConnection stringRedisConn = (StringRedisConnection) connection;
+				return stringRedisConn.set(lockKey, value, Expiration.from(leaseTime, timeUnit), SET_IF_ABSENT);
+			});
+		}
+
+		@Override
+		public void close() {
+			stringRedisTemplate.execute(script, singletonList(lockKey), value);
 		}
 	}
 }

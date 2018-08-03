@@ -27,9 +27,9 @@ public @interface Lock {
 
 	String separator() default ":";
 
-	long waitTime() default 1L;
+	long waitTime() default 2L;
 
-	long leaseTime() default 1L;
+	long leaseTime() default 5L;
 
 	TimeUnit timeUnit() default TimeUnit.SECONDS;
 }
