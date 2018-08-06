@@ -39,4 +39,10 @@ public class TransitionBuilder<S, E, SOURCE> {
 		return fakeStateMachineBuilder;
 	}
 
+	public TransitionBuilder<S, E, SOURCE> sameSourceState() {
+		return this.and()
+				   .withTransition()
+				   .sourceState(sourceState);
+	}
+
 }

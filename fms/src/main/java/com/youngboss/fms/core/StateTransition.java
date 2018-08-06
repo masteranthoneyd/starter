@@ -18,4 +18,10 @@ public class StateTransition<S, E, SOURCE> {
 	private E event;
 
 	private Action<S, SOURCE> action;
+
+	void putActionIfAbsent(Action<S, SOURCE> action) {
+		if (this.action == null) {
+			this.action = action;
+		}
+	}
 }

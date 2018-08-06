@@ -49,12 +49,12 @@ public class FakeStateMachineBuilder<S, E, SOURCE> {
 						   .stateFunction(stateFunction);
 	}
 
-	public FakeStateMachineBuilder<S, E, SOURCE> globalAction(Action<S, SOURCE> action) {
+	public FakeStateMachineBuilder<S, E, SOURCE> defaultAction(Action<S, SOURCE> action) {
 		groupMap.forEach((k, v) -> {
 			if (isNotEmpty(v)) {
 				v.forEach((key, transition) -> {
 					if (transition != null) {
-						transition.action(action);
+						transition.putActionIfAbsent(action);
 					}
 				});
 			}
