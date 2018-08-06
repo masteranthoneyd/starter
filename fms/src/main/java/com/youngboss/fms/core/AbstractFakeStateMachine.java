@@ -3,6 +3,7 @@ package com.youngboss.fms.core;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.InitializingBean;
 
 import java.lang.reflect.ParameterizedType;
@@ -58,6 +59,7 @@ public abstract class AbstractFakeStateMachine<S extends Enum<S>, E extends Enum
 		EnumSet<S> enumSet = EnumSet.allOf(clazz);
 		FakeStateMachineBuilder<S, E, SOURCE> builder = init(enumSet);
 		transitionConfig(builder);
+		this.transitionMap = MapUtils.unmodifiableMap(this.transitionMap);
 	}
 
 	public abstract void transitionConfig(FakeStateMachineBuilder<S, E, SOURCE> machineBuilder);
