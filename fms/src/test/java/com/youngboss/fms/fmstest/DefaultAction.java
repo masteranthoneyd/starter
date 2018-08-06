@@ -7,10 +7,10 @@ import com.youngboss.fms.core.Action;
  * @date 18-8-6
  * @contact yangbingdong1994@gmail.com
  */
-public class DefaultAction implements Action<StateEnum, SomeSource> {
+public class DefaultAction implements Action<StateEnum, SomeEvent, SomeSource> {
 	@Override
-	public void doStateChangeAction(StateEnum stateEnum, SomeSource someSource) {
-		System.out.println("Source state: " + someSource.getSourceState() + ", targetState: " + stateEnum);
+	public void doStateChangeAction(StateEnum stateEnum, SomeEvent someEvent, SomeSource someSource) {
+		System.out.println("Source state: " + someSource.getSourceState() + ", targetState: " + stateEnum + ", event: " + someEvent);
 		someSource.setSourceState(stateEnum);
 	}
 }

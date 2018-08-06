@@ -1,5 +1,6 @@
 package com.youngboss.fms.fmstest;
 
+import com.youngboss.fms.core.StateSource;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -10,7 +11,12 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(chain = true)
-public class SomeSource {
+public class SomeSource implements StateSource<StateEnum> {
 
 	private StateEnum sourceState;
+
+	@Override
+	public StateEnum getState() {
+		return sourceState;
+	}
 }

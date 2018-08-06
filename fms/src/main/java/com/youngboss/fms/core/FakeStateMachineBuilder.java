@@ -3,9 +3,9 @@ package com.youngboss.fms.core;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import static org.apache.commons.collections4.MapUtils.isEmpty;
 import static org.apache.commons.collections4.MapUtils.isNotEmpty;
@@ -17,14 +17,14 @@ import static org.apache.commons.collections4.MapUtils.isNotEmpty;
  */
 @Data
 @Accessors(chain = true, fluent = true)
-public class FakeStateMachineBuilder<S, E, SOURCE> {
+public class FakeStateMachineBuilder<S extends Enum<S>, E extends Enum<E>, SOURCE extends StateSource<S>> {
 
 	private Map<S, Map<E, StateTransition<S, E, SOURCE>>> groupMap;
-	private Function<SOURCE, S> stateFunction;
+	private AbstractFakeStateMachine<S, E, SOURCE> fakeStateMachine;
 
-	public static <S, E, SOURCE> FakeStateMachineBuilder<S, E, SOURCE> init(S[] ss) {
+	public static <S extends Enum<S>, E extends Enum<E>, SOURCE extends StateSource<S>> FakeStateMachineBuilder<S, E, SOURCE> init(EnumSet<S> enumSet) {
 		Map<S, Map<E, StateTransition<S, E, SOURCE>>> m = new HashMap<>(16);
-		for (S s : ss) {
+		for (S s : enumSet) {
 			m.put(s, new HashMap<>(4));
 		}
 		FakeStateMachineBuilder<S, E, SOURCE> builder = new FakeStateMachineBuilder<>();
@@ -40,16 +40,14 @@ public class FakeStateMachineBuilder<S, E, SOURCE> {
 		return groupMap.get(s);
 	}
 
-	public FakeStateMachine<S, E, SOURCE> build() {
-		if (isEmpty(groupMap) || stateFunction == null) {
+	public void build() {
+		if (isEmpty(groupMap)) {
 			throw new FsmException();
 		}
-		FakeStateMachine<S, E, SOURCE> stateMachine = new FakeStateMachine<>();
-		return stateMachine.transitionMap(groupMap)
-						   .stateFunction(stateFunction);
+		fakeStateMachine.transitionMap(groupMap);
 	}
 
-	public FakeStateMachineBuilder<S, E, SOURCE> defaultAction(Action<S, SOURCE> action) {
+	public FakeStateMachineBuilder<S, E, SOURCE> defaultAction(Action<S, E, SOURCE> action) {
 		groupMap.forEach((k, v) -> {
 			if (isNotEmpty(v)) {
 				v.forEach((key, transition) -> {

@@ -12,7 +12,7 @@ import java.util.Map;
  */
 @Data
 @Accessors(chain = true, fluent = true)
-public class TransitionBuilder<S, E, SOURCE> {
+public class TransitionBuilder<S extends Enum<S>, E extends Enum<E>, SOURCE extends StateSource<S>> {
 
 	private S sourceState;
 
@@ -20,7 +20,7 @@ public class TransitionBuilder<S, E, SOURCE> {
 
 	private E event;
 
-	private Action<S, SOURCE> action;
+	private Action<S, E, SOURCE> action;
 
 	private FakeStateMachineBuilder<S, E, SOURCE> fakeStateMachineBuilder;
 

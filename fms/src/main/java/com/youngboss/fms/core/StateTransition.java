@@ -10,16 +10,16 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(chain = true, fluent = true)
-public class StateTransition<S, E, SOURCE> {
+public class StateTransition<S extends Enum<S>, E extends Enum<E>, SOURCE extends StateSource<S>> {
 	private S sourceState;
 
 	private S targetState;
 
 	private E event;
 
-	private Action<S, SOURCE> action;
+	private Action<S, E, SOURCE> action;
 
-	void putActionIfAbsent(Action<S, SOURCE> action) {
+	void putActionIfAbsent(Action<S, E, SOURCE> action) {
 		if (this.action == null) {
 			this.action = action;
 		}
