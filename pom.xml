@@ -40,10 +40,10 @@
 
 
         <dockerfile.compiled.position>${project.build.directory}/docker</dockerfile.compiled.position>
-        <docker.skip.build>true</docker.skip.build>
+        <docker.skip.build>false</docker.skip.build>
         <docker.skip.push>false</docker.skip.push>
-        <docker.registry.url>192.168.0.202:8080</docker.registry.url>
-        <docker.registry.name>dev-images</docker.registry.name>
+        <docker.registry.url>ha.ibaboss.com</docker.registry.url>
+        <docker.registry.name>qa</docker.registry.name>
         <docker-latest-tag>latest</docker-latest-tag>
     </properties>
 
