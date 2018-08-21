@@ -94,10 +94,10 @@
 
         <pluginManagement>
             <plugins>
-                <plugin>
+                <!--<plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
-                    <!--<version>${build-helper-maven-plugin.version}</version>-->
+                    <version>${build-helper-maven-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>timestamp-property</id>
@@ -111,7 +111,7 @@
                             </configuration>
                         </execution>
                     </executions>
-                </plugin>
+                </plugin>-->
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -175,7 +175,7 @@
                             <configuration>
                                 <!--<imageName>${docker.registry.url}/${docker.registry.name}/${project.artifactId}:${docker-latest-tag}</imageName>-->
                                 <!--suppress UnresolvedMavenProperty -->
-                                <imageName>${docker.registry.url}/${docker.registry.name}/${project.artifactId}:${timestamp}</imageName>
+                                <imageName>${docker.registry.url}/${docker.registry.name}/${project.artifactId}:${env.DOCKER_TAG_DATE}</imageName>
                             </configuration>
                         </execution>
                     </executions>
@@ -186,7 +186,7 @@
                         <retryPushCount>2</retryPushCount>
                         <imageTags>
                             <!--suppress UnresolvedMavenProperty -->
-                            <imageTag>${timestamp}</imageTag>
+                            <imageTag>${env.DOCKER_TAG_DATE}</imageTag>
                         </imageTags>
                         <imageName>${docker.registry.url}/${docker.registry.name}/${project.artifactId}</imageName>
                         <dockerDirectory>${dockerfile.compiled.position}</dockerDirectory>
