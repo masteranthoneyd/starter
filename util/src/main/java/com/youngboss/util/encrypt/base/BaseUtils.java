@@ -48,7 +48,9 @@ public class BaseUtils {
 	 * @return 二进位组
 	 */
 	public static byte[] parseHexStr2Byte(String hexStr) {
-		if (hexStr.length() < 1) return null;
+		if (hexStr.length() < 1) {
+			return null;
+		}
 		byte[] result = new byte[hexStr.length() / 2];
 
 		for (int i = 0; i < hexStr.length() / 2; i++) {

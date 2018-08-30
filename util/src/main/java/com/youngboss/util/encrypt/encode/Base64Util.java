@@ -43,7 +43,9 @@ public class Base64Util {
 	 * @return 加密结果字符串
 	 */
 	public static String base64EncodeStr(String string) {
-		if (TextUtils.isEmpty(string)) return "";
+		if (TextUtils.isEmpty(string)) {
+			return "";
+		}
 		return Base64.encodeToString(string.getBytes(), Base64.DEFAULT);
 	}
 
@@ -54,7 +56,9 @@ public class Base64Util {
 	 * @return 解密结果字符串
 	 */
 	public static String base64DecodedStr(String string) {
-		if (TextUtils.isEmpty(string)) return "";
+		if (TextUtils.isEmpty(string)) {
+			return "";
+		}
 		return new String(Base64.decode(string, Base64.DEFAULT));
 	}
 
@@ -65,7 +69,9 @@ public class Base64Util {
 	 * @return 加密结果字符串
 	 */
 	public static String base64EncodeFile(File file) {
-		if (null == file) return "";
+		if (null == file) {
+			return "";
+		}
 
 		FileInputStream inputFile = null;
 		try {
