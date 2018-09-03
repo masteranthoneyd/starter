@@ -19,14 +19,10 @@ import com.dangdang.ddframe.job.lite.spring.api.SpringJobScheduler;
 import com.dangdang.ddframe.job.reg.zookeeper.ZookeeperRegistryCenter;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.youngboss.elasticjob.starter.core.DeleteRegisterUpdateNodeJob;
-import com.youngboss.elasticjob.starter.core.DistributedDelRegUpdateNodeJobListener;
 import com.youngboss.elasticjob.starter.core.Job;
 import com.youngboss.elasticjob.starter.core.JobParameterVo;
 import com.youngboss.elasticjob.starter.core.JobSettings;
-import com.youngboss.elasticjob.starter.help.JobNameParser;
 import com.youngboss.elasticjob.starter.util.CronUtils;
-import com.youngboss.elasticjob.starter.util.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
@@ -40,23 +36,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Constructor;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static com.dangdang.ddframe.job.executor.handler.JobProperties.JobPropertiesEnum.EXECUTOR_SERVICE_HANDLER;
 import static com.dangdang.ddframe.job.executor.handler.JobProperties.JobPropertiesEnum.JOB_EXCEPTION_HANDLER;
 import static com.dangdang.ddframe.job.lite.internal.config.LiteJobConfigurationGsonFactory.toJsonForObject;
-import static com.youngboss.elasticjob.starter.core.JobConstans.CROSS_SYMBOL;
 import static com.youngboss.elasticjob.starter.core.JobConstans.JOB_CONF_PATH;
 import static com.youngboss.elasticjob.starter.core.JobConstans.SLASH;
-import static com.youngboss.elasticjob.starter.core.JobConstans.UPDATE_JOB_FLAG;
 import static com.youngboss.elasticjob.starter.core.JobType.DATAFLOW;
 import static com.youngboss.elasticjob.starter.core.JobType.SCRIPT;
 import static com.youngboss.elasticjob.starter.core.JobType.SIMPLE;
-import static com.youngboss.elasticjob.starter.util.DateUtil.getCurDate;
 import static java.lang.System.currentTimeMillis;
-import static java.util.Calendar.MINUTE;
+import static java.lang.Thread.sleep;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -90,11 +83,7 @@ public class ElasticJobService {
 			ChildData data = event.getData();
 			switch (event.getType()) {
 				case CHILD_ADDED:
-					if (isUpdateNode(data)){
-						updateJob4Monitor(curatorFramework, data);
-					}else {
-						addJob4Monitor(curatorFramework, data);
-					}
+					addJob4Monitor(curatorFramework, data);
 					break;
 				case CHILD_REMOVED:
 					String jobName = data.getPath().substring(1);
@@ -109,29 +98,6 @@ public class ElasticJobService {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	private boolean isUpdateNode(ChildData data){
-		if (nonNull(data) && data.getPath().startsWith(UPDATE_JOB_FLAG)){
-			return true;
-		}
-		return false;
-	}
-
-	public void updateJob4Monitor(CuratorFramework curatorFramework, ChildData data) throws Exception {
-		String config = new String(curatorFramework.getData().forPath(data.getPath() + JOB_CONF_PATH));
-		Job job = JSONObject.parseObject(config, Job.class);
-		JobParameterVo parameterVo = job.parseParameter().getJobParameterVo();
-		String updateConfig = new String(curatorFramework.getData()
-				.forPath(SLASH + parameterVo.getUpdateJobName() + JOB_CONF_PATH));
-		Job updateJob = JsonUtils.toBean(Job.class, updateConfig);
-		Date cronDate = CronUtils.getDateByCron(updateJob.getCron());
-		if (isValidJob(updateJob, cronDate, currentTimeMillis(), false)){
-			updateJobSettings(updateJob);
-		}else if (nonNull(cronDate) && cronDate.getTime() < currentTimeMillis()) {
-			deleteJob(updateJob.getJobName());
-		}
-		addJob4Monitor(curatorFramework, data);
 	}
 
 	public boolean isExistNodeOnRegisterCenter(String jobName){
@@ -156,6 +122,7 @@ public class ElasticJobService {
 	}
 
 	public void addJob4Monitor(CuratorFramework curatorFramework, ChildData data) throws Exception {
+		pendingExistResult(() -> zookeeperRegistryCenter.isExisted(data.getPath() + JOB_CONF_PATH));
 		if (isNull(curatorFramework.getZookeeperClient()
 								   .getZooKeeper()
 								   .exists(ZKPaths.makePath(SLASH, curatorFramework.getNamespace()) + data.getPath() + JOB_CONF_PATH, false))) {
@@ -173,6 +140,18 @@ public class ElasticJobService {
 		} else if (nonNull(cronDate) && cronDate.getTime() < currentTimeMillis()) {
 			//定时发送的时间存在时比并且执行时间小于当前时间时删除该任务
 			deleteJob(job.getJobName());
+		}
+	}
+
+	private void pendingExistResult(Supplier<Boolean> supplier) {
+		long startTime = currentTimeMillis();
+		long timeout = 5000L;
+		while(!supplier.get() && (currentTimeMillis() - startTime) < timeout){
+			try {
+				sleep(1000);
+			} catch (InterruptedException e) {
+				log.error("确认是否存在节点报错", e);
+			}
 		}
 	}
 
@@ -199,11 +178,6 @@ public class ElasticJobService {
 		}
 		if (isExistNodeOnRegisterCenter(job.getJobName()) && needUpdateRegister){
 			updateJobSettings(job);
-			//当任务节点下的config更新时是不会触发PathChildrenCache 的update的，当节点的config更新时保存一个更新的标志
-			//创建一个新的job用于更新旧的定时任务，并且这个新的定时任务（分片数量为1）在5分钟后开始执行，
-			//DistributedDelRegUpdateNodeJobListener监听到新的任务执行完之后删除新的任务
-			Job delRegUpdateNodeJob = buildDelRegUpdateNodeJob(job.getJobName(), true);
-			addOrUpdateJob(delRegUpdateNodeJob, false);
 		}else {
 			JobCoreConfiguration jobCoreConfig = getJobCoreConfiguration(job);
 			JobTypeConfiguration typeConfig = getJobTypeConfiguration(job, jobCoreConfig);
@@ -305,18 +279,4 @@ public class ElasticJobService {
 	}
 
 
-	private Job buildDelRegUpdateNodeJob(String key, boolean isOverWirteCfg) {
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(getCurDate());
-		cal.add(MINUTE, 5);
-		Job job = new Job().setCron(CronUtils.getCron(cal.getTime()))
-				.setJobName(JobNameParser.parseName(DeleteRegisterUpdateNodeJob.class, currentTimeMillis() + CROSS_SYMBOL + key))
-				.setJobParameterVo(JobParameterVo.of(DistributedDelRegUpdateNodeJobListener.class.getName())
-						.setUpdateJobName(key))
-				.setJobClass(DeleteRegisterUpdateNodeJob.class)
-				.setJobType(SIMPLE)
-				.setShardingTotalCount(1)
-				.setOverwrite(isOverWirteCfg);
-		return job;
-	}
 }
