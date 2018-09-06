@@ -67,9 +67,6 @@ public class ElasticJobService {
 	@Value("${elasticjob.event:false}")
 	private boolean enableEventConfig;
 
-	@Value("${elasticjob.namespace}")
-	private String namespace;
-
 	private final ZookeeperRegistryCenter zookeeperRegistryCenter;
 	private final JobEventConfiguration jobEventConfiguration;
 
