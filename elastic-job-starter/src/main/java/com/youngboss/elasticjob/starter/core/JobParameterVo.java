@@ -15,7 +15,6 @@ import lombok.experimental.Accessors;
 public class JobParameterVo {
 	protected String distributedJobListener = CommonScheduleJobListener.class.getName();
 	protected String jobName;
-	protected String updateJobName;
 	protected String jobId;
 	@JSONField(serialize = false)
 	protected int shardingItem;
