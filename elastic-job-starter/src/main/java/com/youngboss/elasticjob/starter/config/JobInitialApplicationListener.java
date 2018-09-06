@@ -46,7 +46,7 @@ public class JobInitialApplicationListener implements ApplicationListener<Applic
 			Class<?> clz = confBean.getClass();
 			JobConfEnum conf = clz.getAnnotation(JobConfEnum.class);
 			Job job = buildJobByConfEnum(conf);
-			elasticJobService.initSpringJobScheduler(job);
+			elasticJobService.addOrUpdateJob(job);
 		}
 		initMonitorJobRegister();
 		if (isNotEmpty(abstractDynamicJobInitializerList)) {

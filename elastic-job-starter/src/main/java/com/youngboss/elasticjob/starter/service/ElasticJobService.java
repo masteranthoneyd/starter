@@ -10,13 +10,18 @@ import com.dangdang.ddframe.job.config.simple.SimpleJobConfiguration;
 import com.dangdang.ddframe.job.event.JobEventConfiguration;
 import com.dangdang.ddframe.job.lite.api.listener.AbstractDistributeOnceElasticJobListener;
 import com.dangdang.ddframe.job.lite.api.listener.ElasticJobListener;
+import com.dangdang.ddframe.job.lite.api.strategy.JobInstance;
 import com.dangdang.ddframe.job.lite.config.LiteJobConfiguration;
 import com.dangdang.ddframe.job.lite.internal.schedule.JobRegistry;
 import com.dangdang.ddframe.job.lite.internal.schedule.JobScheduleController;
+import com.dangdang.ddframe.job.lite.internal.storage.JobNodePath;
 import com.dangdang.ddframe.job.lite.spring.api.SpringJobScheduler;
 import com.dangdang.ddframe.job.reg.zookeeper.ZookeeperRegistryCenter;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.youngboss.elasticjob.starter.core.Job;
 import com.youngboss.elasticjob.starter.core.JobParameterVo;
+import com.youngboss.elasticjob.starter.core.JobSettings;
 import com.youngboss.elasticjob.starter.util.CronUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,18 +31,25 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCache;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.data.Stat;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Constructor;
 import java.util.Date;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import static com.dangdang.ddframe.job.executor.handler.JobProperties.JobPropertiesEnum.EXECUTOR_SERVICE_HANDLER;
 import static com.dangdang.ddframe.job.executor.handler.JobProperties.JobPropertiesEnum.JOB_EXCEPTION_HANDLER;
+import static com.dangdang.ddframe.job.lite.internal.config.LiteJobConfigurationGsonFactory.toJsonForObject;
+import static com.youngboss.elasticjob.starter.core.JobConstans.JOB_CONF_PATH;
+import static com.youngboss.elasticjob.starter.core.JobConstans.SLASH;
 import static com.youngboss.elasticjob.starter.core.JobType.DATAFLOW;
 import static com.youngboss.elasticjob.starter.core.JobType.SCRIPT;
 import static com.youngboss.elasticjob.starter.core.JobType.SIMPLE;
+import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.sleep;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -63,12 +75,11 @@ public class ElasticJobService {
 	 */
 	public void monitorJobRegister() {
 		CuratorFramework client = zookeeperRegistryCenter.getClient();
-		PathChildrenCache childrenCache = new PathChildrenCache(client, "/", true);
+		PathChildrenCache childrenCache = new PathChildrenCache(client, SLASH, true);
 		PathChildrenCacheListener childrenCacheListener = (curatorFramework, event) -> {
 			ChildData data = event.getData();
 			switch (event.getType()) {
 				case CHILD_ADDED:
-					//找不到配置信息时将job在zk上面的节点删除
 					addJob4Monitor(curatorFramework, data);
 					break;
 				case CHILD_REMOVED:
@@ -86,37 +97,73 @@ public class ElasticJobService {
 		}
 	}
 
+	public boolean isExistNodeOnRegisterCenter(String jobName){
+		return zookeeperRegistryCenter.isExisted(SLASH + jobName + JOB_CONF_PATH);
+	}
+
+	private boolean isValidJob(Job job, Date cronDate, long time, boolean isAddJob) {
+		JobInstance jobInstance = JobRegistry.getInstance().getJobInstance(job.getJobName());
+		return (isNull(cronDate) || cronDate.getTime() > time) && (isAddJob ? isNull(jobInstance) : nonNull(jobInstance));
+	}
+
+	public void updateJobSettings(final Job job) {
+		Preconditions.checkArgument(!Strings.isNullOrEmpty(job.getJobName()), "jobName can not be empty.");
+		Preconditions.checkArgument(!Strings.isNullOrEmpty(job.getCron()), "cron can not be empty.");
+		Preconditions.checkArgument(job.getShardingTotalCount() > 0, "shardingTotalCount should larger than zero.");
+		JobNodePath jobNodePath = new JobNodePath(job.getJobName());
+		JobSettings jobSettings = new JobSettings();
+		BeanUtils.copyProperties(job, jobSettings, "jobClass", "distributedListener", "jobProperties");
+		jobSettings.setJobClass(job.getJobClass().getName());
+		jobSettings.setDistributedListener(nonNull(job.getDistributedListener()) ? job.getDistributedListener().getName() : "");
+		zookeeperRegistryCenter.update(jobNodePath.getConfigNodePath(), toJsonForObject(jobSettings));
+	}
+
 	public void addJob4Monitor(CuratorFramework curatorFramework, ChildData data) throws Exception {
+		pendingExistResult(() -> zookeeperRegistryCenter.isExisted(data.getPath() + JOB_CONF_PATH));
 		if (isNull(curatorFramework.getZookeeperClient()
 								   .getZooKeeper()
-								   .exists(ZKPaths.makePath("/", curatorFramework.getNamespace()) + data.getPath() + "/config", false))) {
+								   .exists(ZKPaths.makePath(SLASH, curatorFramework.getNamespace()) + data.getPath() + JOB_CONF_PATH, false))) {
 			deleteJob(data.getPath().substring(1));
 			return;
 		}
-		String config = new String(curatorFramework.getData().forPath(data.getPath() + "/config"));
+		String config = new String(curatorFramework.getData().forPath(data.getPath() + JOB_CONF_PATH));
 		Job job = JSONObject.parseObject(config, Job.class);
 		JobParameterVo parameterVo = job.parseParameter().getJobParameterVo();
 
 		Date cronDate = parameterVo.isDynamic() ? CronUtils.getDateByCron(job.getCron()) : null;
 		//定时发送的时间存在时比并且执行时间大于当前时间或者cronDate时间为空；并且服务器实例中不存在该作业
-		long time = System.currentTimeMillis();
-		if ((isNull(cronDate) || cronDate.getTime() > time) && isNull(JobRegistry.getInstance()
-																				 .getJobInstance(job.getJobName()))) {
-			addOrUpdateJob(job);
-		} else if (nonNull(cronDate) && cronDate.getTime() < time) {
+		if (isValidJob(job, cronDate, currentTimeMillis(), true)) {
+			addOrUpdateJob(job, false);
+		} else if (nonNull(cronDate) && cronDate.getTime() < currentTimeMillis()) {
 			//定时发送的时间存在时比并且执行时间小于当前时间时删除该任务
 			deleteJob(job.getJobName());
 		}
 	}
 
-	public boolean addOrUpdateJob(Job job) {
-		return initSpringJobScheduler(job);
+	private void pendingExistResult(Supplier<Boolean> supplier) {
+		long startTime = currentTimeMillis();
+		long timeout = 5000L;
+		while(!supplier.get() && (currentTimeMillis() - startTime) < timeout){
+			try {
+				sleep(1000);
+			} catch (InterruptedException e) {
+				log.error("确认是否存在节点报错", e);
+			}
+		}
 	}
 
-	public boolean initSpringJobScheduler(Job job) {
+	public boolean addOrUpdateJob(Job job) {
+		return initSpringJobScheduler(job, false);
+	}
+
+	public boolean addOrUpdateJob(Job job, boolean needUpdateRegister) {
+		return initSpringJobScheduler(job, needUpdateRegister);
+	}
+
+	public boolean initSpringJobScheduler(Job job, boolean needUpdateRegister) {
 		Date cronDate = job.getJobParameterVo().isDynamic() ? CronUtils.getDateByCron(job.getCron()) : null;
 		//定时发送的时间存在时并且执行时间小于于当前时间
-		if (nonNull(cronDate) && cronDate.getTime() < System.currentTimeMillis()) {
+		if (nonNull(cronDate) && cronDate.getTime() < currentTimeMillis()) {
 			log.warn("jobName为 {} 尝试创建定时任务失败，执行时间小于当前时间，执行时间为 {}", job.getJobName(), cronDate);
 			return false;
 		}
@@ -126,13 +173,17 @@ public class ElasticJobService {
 		} catch (Exception e) {
 			log.error("Init elastic job fail", e);
 		}
-		JobCoreConfiguration jobCoreConfig = getJobCoreConfiguration(job);
-		JobTypeConfiguration typeConfig = getJobTypeConfiguration(job, jobCoreConfig);
-		LiteJobConfiguration jobConfig = getLiteJobConfiguration(job, typeConfig);
-		ElasticJobListener distributedJobListener = getDistributedJobListener(job);
-		SpringJobScheduler springJobScheduler = enableEventConfig ? new SpringJobScheduler(elasticJob, zookeeperRegistryCenter, jobConfig, jobEventConfiguration, distributedJobListener) :
-				new SpringJobScheduler(elasticJob, zookeeperRegistryCenter, jobConfig, distributedJobListener);
-		springJobScheduler.init();
+		if (isExistNodeOnRegisterCenter(job.getJobName()) && needUpdateRegister){
+			updateJobSettings(job);
+		}else {
+			JobCoreConfiguration jobCoreConfig = getJobCoreConfiguration(job);
+			JobTypeConfiguration typeConfig = getJobTypeConfiguration(job, jobCoreConfig);
+			LiteJobConfiguration jobConfig = getLiteJobConfiguration(job, typeConfig);
+			ElasticJobListener distributedJobListener = getDistributedJobListener(job);
+			SpringJobScheduler springJobScheduler = enableEventConfig ? new SpringJobScheduler(elasticJob, zookeeperRegistryCenter, jobConfig, jobEventConfiguration, distributedJobListener) :
+					new SpringJobScheduler(elasticJob, zookeeperRegistryCenter, jobConfig, distributedJobListener);
+			springJobScheduler.init();
+		}
 		log.info("Init elastic job success 『" + job.getJobName() + "』");
 		return true;
 	}
@@ -207,7 +258,7 @@ public class ElasticJobService {
 		removeJob4Monitor(jobName);
 		CuratorFramework client = zookeeperRegistryCenter.getClient();
 		try {
-			String path = "/" + jobName;
+			String path = SLASH + jobName;
 			Stat stat = client.checkExists().forPath(path);
 			if (stat != null) {
 				client.delete().deletingChildrenIfNeeded().forPath(path);
@@ -223,4 +274,6 @@ public class ElasticJobService {
 			jobScheduleController.shutdown();
 		}
 	}
+
+
 }
