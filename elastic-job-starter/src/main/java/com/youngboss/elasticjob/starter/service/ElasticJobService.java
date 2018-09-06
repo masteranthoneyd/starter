@@ -173,7 +173,7 @@ public class ElasticJobService {
 		} catch (Exception e) {
 			log.error("Init elastic job fail", e);
 		}
-		if (isExistNodeOnRegisterCenter(job.getJobName()) && needUpdateRegister){
+		if (needUpdateRegister && isExistNodeOnRegisterCenter(job.getJobName())){
 			updateJobSettings(job);
 		}else {
 			JobCoreConfiguration jobCoreConfig = getJobCoreConfiguration(job);
