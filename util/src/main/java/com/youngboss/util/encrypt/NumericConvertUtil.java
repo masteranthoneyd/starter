@@ -1,5 +1,6 @@
 package com.youngboss.util.encrypt;
 
+
 /**
  * @author ybd
  * @date 18-8-24
@@ -9,20 +10,22 @@ public class NumericConvertUtil {
 	/**
 	 * 在进制表示中的字符集合，0-Z分别用于表示最大为62进制的符号表示
 	 */
-	private static final char[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+	private static final char[] DIGITS62 = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 			'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
 			'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 			'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 			'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
 
-	private static final int MAX_SEED = DIGITS.length;
+
+	private static final int MAX_SEED_62 = DIGITS62.length;
 
 	public static String convert10To62System(long number) {
-		return toOtherNumberSystem(number, MAX_SEED);
+		return toOtherNumberSystem(number, MAX_SEED_62);
 	}
 
+
 	public static long convert62To10System(String number) {
-		return toDecimalNumber(number, MAX_SEED);
+		return toDecimalNumber(number, MAX_SEED_62);
 	}
 
 	/**
@@ -39,10 +42,10 @@ public class NumericConvertUtil {
 		char[] buf = new char[32];
 		int charPos = 32;
 		while ((number / seed) > 0) {
-			buf[--charPos] = DIGITS[(int) (number % seed)];
+			buf[--charPos] = DIGITS62[(int) (number % seed)];
 			number /= seed;
 		}
-		buf[--charPos] = DIGITS[(int) (number % seed)];
+		buf[--charPos] = DIGITS62[(int) (number % seed)];
 		return new String(buf, charPos, (32 - charPos));
 	}
 
@@ -63,9 +66,9 @@ public class NumericConvertUtil {
 
 		for (int i = charBuf.length - 1; i >= 0; i--) {
 			int index = 0;
-			for (int j = 0, length = DIGITS.length; j < length; j++) {
+			for (int j = 0, length = DIGITS62.length; j < length; j++) {
 				//找到对应字符的下标，对应的下标才是具体的数值
-				if (DIGITS[j] == charBuf[i]) {
+				if (DIGITS62[j] == charBuf[i]) {
 					index = j;
 				}
 			}
