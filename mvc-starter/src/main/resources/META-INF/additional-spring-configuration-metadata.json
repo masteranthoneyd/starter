@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "youngboss.kafka.bootstrap",
+      "type": "java.lang.String",
+      "description": "Description for youngboss.kafka.bootstrap.",
+      "defaultValue": "kafka:9092"
+    }
+  ]
+}

@@ -4,4 +4,6 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   com.youngboss.mvc.starter.SpringAsyncConfig,\
   com.youngboss.mvc.starter.SpringScheduleConfig,\
   com.youngboss.mvc.starter.shutdown.GracefulShutdownConfiguration,\
-  com.youngboss.mvc.starter.aop.BossApiAspect
+  com.youngboss.mvc.starter.aop.BossApiAspect,\
+  com.youngboss.mvc.starter.CustomWebMvcConfig,\
+  com.youngboss.mvc.starter.IpAndUaWebMvcConfig
