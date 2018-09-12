@@ -19,7 +19,7 @@ public class IpInterceptor extends HandlerInterceptorAdapter {
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
 		String realIp = IpUtil.realIp(request);
-		MDC.put(IP, "58.63.50.228");
+		MDC.put(IP, realIp);
 		request.setAttribute(IP, realIp);
 		MDC.put("UA", request.getHeader(UA));
 		return true;
