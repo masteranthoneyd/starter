@@ -28,15 +28,16 @@ public class IpUtil {
 	 */
 	public static String getIp(HttpServletRequest request) {
 		Objects.requireNonNull(request);
-		String ip = request.getHeader("Cdn-Src-Ip");
+		String ip = request.getHeader("X-Forwarded-For");
+		if (matchIp(ip)) {
+			int index = ip.indexOf(",");
+			return index != -1 ? ip.substring(0, index) : ip;
+		}
+		ip = request.getHeader("HTTP_X_FORWARDED_FOR");
 		if (matchIp(ip)) {
 			return ip;
 		}
 		ip = request.getHeader("X-Real-IP");
-		if (matchIp(ip)) {
-			return ip;
-		}
-		ip = request.getHeader("X-Forwarded-For");
 		if (matchIp(ip)) {
 			return ip;
 		}
@@ -52,7 +53,7 @@ public class IpUtil {
 		if (matchIp(ip)) {
 			return ip;
 		}
-		ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+		ip = request.getHeader("Cdn-Src-Ip");
 		if (matchIp(ip)) {
 			return ip;
 		} else {
