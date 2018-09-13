@@ -30,8 +30,7 @@ public class IpUtil {
 		Objects.requireNonNull(request);
 		String ip = request.getHeader("X-Forwarded-For");
 		if (matchIp(ip)) {
-			int index = ip.indexOf(",");
-			return index != -1 ? ip.substring(0, index) : ip;
+			return ip;
 		}
 		ip = request.getHeader("HTTP_X_FORWARDED_FOR");
 		if (matchIp(ip)) {
