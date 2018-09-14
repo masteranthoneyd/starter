@@ -51,10 +51,6 @@ public class IpUtil {
 		ip = request.getHeader("HTTP_CLIENT_IP");
 		if (matchIp(ip)) {
 			return ip;
-		}
-		ip = request.getHeader("Cdn-Src-Ip");
-		if (matchIp(ip)) {
-			return ip;
 		} else {
 			return request.getRemoteAddr();
 		}
