@@ -3,7 +3,8 @@
     <properties>
         <Property name="UNKNOWN" value="????"/>
         <Property name="KAFKA_SERVERS" value="${spring:youngboss.kafka.bootstrap}"/>
-        <Property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} | ${spring:spring.application.name} | %5p | %X{IP} | %X{UA} | %t -> %c{1}#%M:%L | %msg%n%xwEx"/>
+        <Property name="SERVER_NAME" value="${spring:spring.application.name}"/>
+        <Property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} | ${SERVER_NAME} | %5p | %X{IP} | %X{UA} | %t -> %c{1}#%M:%L | %msg%n%xwEx"/>
     </properties>
 
     <Appenders>
@@ -21,8 +22,8 @@
             <Property name="max.block.ms">3000</Property>
         </Kafka>
 
-        <RollingFile name="failoverKafkaLog" fileName="./failoverKafka/failover.log"
-                     filePattern="./failoverKafka/failover.%d{yyyy-MM-dd}.log">
+        <RollingFile name="failoverKafkaLog" fileName="./failoverKafka/${SERVER_NAME}.log"
+                     filePattern="./failoverKafka/${SERVER_NAME}.%d{yyyy-MM-dd}.log">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
             <PatternLayout>
                 <Pattern>${LOG_PATTERN}</Pattern>
