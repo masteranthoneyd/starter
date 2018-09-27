@@ -42,6 +42,7 @@ public class RedissonDLock implements DLock {
 		this.timeUnit = property.getTimeUnit();
 
 		Config config = new Config();
+		config.setLockWatchdogTimeout(10000);
 		SingleServerConfig singleServerConfig = config.useSingleServer();
 		singleServerConfig.setAddress("redis://" + property.getHost() + ":" + property.getPort());
 		if (property.getPassword() != null && property.getPassword().trim().length() > 0) {
