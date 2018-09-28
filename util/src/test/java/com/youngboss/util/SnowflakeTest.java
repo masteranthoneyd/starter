@@ -32,7 +32,7 @@ import java.util.stream.IntStream;
 public class SnowflakeTest {
 	private static final Snowflake[] SNOWFLAKES = IntStream.rangeClosed(1, 8)
 														   .mapToObj(Snowflake::create)
-														   .toArray(value -> new Snowflake[8]);
+														   .toArray(Snowflake[]::new);
 
 	private static final AtomicLong ATOMIC_LONG = new AtomicLong(0);
 
