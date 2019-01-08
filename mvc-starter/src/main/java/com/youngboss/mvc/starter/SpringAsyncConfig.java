@@ -2,7 +2,7 @@ package com.youngboss.mvc.starter;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * @date 18-5-11
  * @contact yangbingdong1994@gmail.com
  */
-@ConditionalOnMissingBean(AsyncConfigurer.class)
+@ConditionalOnBean(AsyncConfigurer.class)
 @Configuration
 @EnableAsync
 public class SpringAsyncConfig implements AsyncConfigurer {
